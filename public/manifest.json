@@ -1,11 +1,27 @@
 {
   "name": "Electricity Balance Tracker",
-  "short_name": "ElecTracker",
+  "short_name": "ElecTracker", 
   "description": "Track your prepaid electricity balance",
-  "start_url": "/",
+  "start_url": "/?utm_source=pwa",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#22c55e",
-  "orientation": "portrait",
-  "icons": []
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%231a1a2e'/%3E%3Cpath d='M96 48c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 8c22.1 0 40 17.9 40 40s-17.9 40-40 40-40-17.9-40-40 17.9-40 40-40z' fill='%2322c55e'/%3E%3Cpath d='M96 72c-13.3 0-24 10.7-24 24s10.7 24 24 24 24-10.7 24-24-10.7-24-24-24zm0 8c8.8 0 16 7.2 16 16s-7.2 16-16 16-16-7.2-16-16 7.2-16 16-16z' fill='%23fff'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cred width='512' height='512' fill='%231a1a2e'/%3E%3Cpath d='M256 128c-70.7 0-128 57.3-128 128s57.3 128 128 128 128-57.3 128-128-57.3-128-128-128zm0 21c59.2 0 107 47.8 107 107s-47.8 107-107 107-107-47.8-107-107 47.8-107 107-107z' fill='%2322c55e'/%3E%3Cpath d='M256 192c-35.3 0-64 28.7-64 64s28.7 64 64 64 64-28.7 64-64-28.7-64-64-64zm0 21c23.7 0 43 19.3 43 43s-19.3 43-43 43-43-19.3-43-43 19.3-43 43-43z' fill='%23fff'/%3E%3C/svg%3E",
+      "sizes": "512x512", 
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
