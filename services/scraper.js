@@ -14,7 +14,13 @@ export class ScraperService {
   async start() {
     console.log('Starting scraper service...');
     
-    await this.scrapeBalance();
+    // Delay initial scrape on production to let server fully start
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Production environment detected, delaying initial scrape by 30 seconds...');
+      setTimeout(() => this.scrapeBalance(), 30000);
+    } else {
+      await this.scrapeBalance();
+    }
     
     const cronExpression = `*/${this.intervalMinutes} * * * *`;
     cron.schedule(cronExpression, async () => {
@@ -45,16 +51,27 @@ export class ScraperService {
         throw new Error('Missing credentials in .env file');
       }
 
-      this.browser = await puppeteer.launch({
-        headless: true, // Run in background
+      // Puppeteer launch options for different environments
+      const launchOptions = {
+        headless: true,
         args: [
-          '--no-sandbox', 
+          '--no-sandbox',
           '--disable-setuid-sandbox',
-          '--disable-blink-features=AutomationControlled',
-          '--disable-dev-shm-usage'
-        ],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
-      });
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process',
+          '--single-process',
+          '--no-zygote'
+        ]
+      };
+
+      // Use system Chrome on Render/production
+      if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      }
+
+      this.browser = await puppeteer.launch(launchOptions);
 
       const page = await this.browser.newPage();
       
