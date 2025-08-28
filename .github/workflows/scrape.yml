@@ -1,0 +1,42 @@
+name: Scrape Electricity Balance
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        npm install puppeteer
+        npm install dotenv
+    
+    - name: Run scraper
+      env:
+        ELECTRICITY_USERNAME: ${{ secrets.ELECTRICITY_USERNAME }}
+        ELECTRICITY_PASSWORD: ${{ secrets.ELECTRICITY_PASSWORD }}
+        PROVIDER_LOGIN_URL: ${{ secrets.PROVIDER_LOGIN_URL }}
+      run: |
+        node scraper-standalone.js
+    
+    - name: Commit data
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data/balance.json
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update balance data"
+        git push

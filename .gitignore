@@ -1,5 +1,6 @@
 node_modules/
 .env
-data/
+.env.local
+.vercel
+debug-screenshot.png
 *.log
-.DS_Store

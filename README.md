@@ -1,68 +1,50 @@
-# Electricity Monitor
+# Electricity Balance Monitor
 
-A self-hosted web application to display your electricity balance and predicted days remaining on a Raspberry Pi or any device.
+A PWA that automatically tracks your Electric Ireland prepaid electricity balance using GitHub Actions for scraping and Vercel for hosting.
 
 ## Features
+- 🔄 Automatic balance scraping every 30 minutes
+- 📱 Progressive Web App - installable on any device
+- 💰 Shows current balance and days remaining
+- 🔒 Secure credential storage via GitHub Secrets
+- 🆓 Completely free hosting
 
-- **Secure Credentials**: Your electricity provider login credentials are stored only on your server
-- **Auto-refresh**: Automatically scrapes balance data at configured intervals
-- **PWA Support**: Install as a mobile app on phones/tablets
-- **Responsive Design**: Works on any screen size
-- **Docker Support**: Easy deployment on Raspberry Pi
+## Setup Instructions
 
-## Setup
+### 1. Fork/Clone this repository
 
-### 1. Configuration
+### 2. Configure GitHub Secrets
+Go to Settings → Secrets → Actions and add:
+- `ELECTRICITY_USERNAME` - Your Electric Ireland email
+- `ELECTRICITY_PASSWORD` - Your password (use quotes if it contains special characters)
+- `PROVIDER_LOGIN_URL` - https://youraccountonline.electricireland.ie/
 
-Copy `.env.example` to `.env` and fill in your details:
+### 3. Deploy to Vercel
+1. Sign up at [vercel.com](https://vercel.com)
+2. Import this GitHub repository
+3. Set root directory to `public`
+4. Deploy!
 
+### 4. Run Initial Scrape
+Go to Actions tab → "Scrape Electricity Balance" → Run workflow
+
+## How it Works
+- GitHub Actions runs Puppeteer every 30 minutes to scrape your balance
+- Data is saved to `data/balance.json` and committed
+- Frontend hosted on Vercel fetches data from GitHub
+- No server required - completely serverless architecture
+
+## Local Development
 ```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-```
-ELECTRICITY_USERNAME=your_username
-ELECTRICITY_PASSWORD=your_password
-PROVIDER_LOGIN_URL=https://your-provider.com/login
-SCRAPE_INTERVAL_MINUTES=30
-```
-
-### 2. Customize Scraper
-
-Edit `services/scraper.js` to match your electricity provider's website:
-- Update the login field selectors (lines 54-55)
-- Update the submit button selector (line 58)
-- Update balance/days selectors (lines 62-63)
-
-### 3. Run with Docker (Recommended for Raspberry Pi)
-
-```bash
-docker-compose up -d
-```
-
-### 4. Run without Docker
-
-```bash
+# Install dependencies
 npm install
-npm start
+
+# Run scraper locally (requires .env file)
+npm run scrape
 ```
 
-## Access
-
-- Open browser to `http://raspberry-pi-ip:3000`
-- Install as PWA on mobile devices for app-like experience
-- Share the URL with housemates (they won't see your credentials)
-
-## Security Notes
-
-- Credentials are only stored in `.env` file on your server
-- Never commit `.env` to version control
-- The web interface is read-only - no login required for viewing
-- Consider using a VPN if accessing from outside your network
-
-## Troubleshooting
-
-- Check logs: `docker-compose logs -f`
-- Ensure Raspberry Pi has enough RAM for Puppeteer
-- Verify selectors match your provider's website structure
+## Technologies
+- GitHub Actions for automated scraping
+- Puppeteer for web scraping
+- Vercel for static hosting
+- PWA for mobile app experience

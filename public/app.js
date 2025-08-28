@@ -1,3 +1,8 @@
+// Static version that reads from GitHub
+const GITHUB_USER = 'Pyxyl'; // Your GitHub username
+const GITHUB_REPO = 'FYEI'; // Your repo name
+const DATA_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/balance.json`;
+
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -7,26 +12,18 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-let updateInterval;
-
 async function fetchData() {
     try {
-        const [balanceResponse, statusResponse] = await Promise.all([
-            fetch('/api/balance'),
-            fetch('/api/status')
-        ]);
-        
-        const balance = await balanceResponse.json();
-        const status = await statusResponse.json();
-        
-        updateDisplay(balance, status);
+        const response = await fetch(DATA_URL);
+        const data = await response.json();
+        updateDisplay(data);
     } catch (error) {
         console.error('Error fetching data:', error);
         showError('Failed to fetch data');
     }
 }
 
-function updateDisplay(data, status) {
+function updateDisplay(data) {
     const balanceEl = document.getElementById('balance');
     const daysEl = document.getElementById('days');
     const lastUpdatedEl = document.getElementById('lastUpdated');
@@ -58,63 +55,21 @@ function updateDisplay(data, status) {
             } else if (data.daysRemaining < 14) {
                 daysEl.style.color = 'var(--accent-yellow)';
             } else {
-                daysEl.style.color = 'var(--text-primary)';
+                daysEl.style.color = 'var(--accent-green)';
             }
         } else {
             daysEl.textContent = '--';
         }
         
         if (data.lastUpdated) {
-            const date = new Date(data.lastUpdated);
-            lastUpdatedEl.textContent = formatDateTime(date);
-        }
-    }
-    
-    if (status.nextRun) {
-        const nextDate = new Date(status.nextRun);
-        nextUpdateEl.textContent = formatDateTime(nextDate);
-        
-        updateCountdown(nextDate);
-    }
-}
-
-function formatDateTime(date) {
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1 && diffMs > 0) {
-        return 'Just now';
-    } else if (diffMins < 60 && diffMs > 0) {
-        return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
-    } else {
-        return date.toLocaleString();
-    }
-}
-
-function updateCountdown(nextDate) {
-    const countdownEl = document.getElementById('nextUpdate');
-    
-    clearInterval(updateInterval);
-    updateInterval = setInterval(() => {
-        const now = new Date();
-        const diffMs = nextDate - now;
-        
-        if (diffMs <= 0) {
-            countdownEl.textContent = 'Updating...';
-            clearInterval(updateInterval);
-            fetchData();
-        } else {
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffSecs = Math.floor((diffMs % 60000) / 1000);
+            const lastUpdate = new Date(data.lastUpdated);
+            lastUpdatedEl.textContent = lastUpdate.toLocaleString();
             
-            if (diffMins > 0) {
-                countdownEl.textContent = `${diffMins}m ${diffSecs}s`;
-            } else {
-                countdownEl.textContent = `${diffSecs}s`;
-            }
+            // Calculate next update (every 30 minutes)
+            const nextUpdate = new Date(lastUpdate.getTime() + 30 * 60000);
+            nextUpdateEl.textContent = nextUpdate.toLocaleTimeString();
         }
-    }, 1000);
+    }
 }
 
 function showError(message) {
@@ -124,21 +79,12 @@ function showError(message) {
 }
 
 function refreshData() {
-    const btn = document.querySelector('.refresh-btn');
-    btn.disabled = true;
-    btn.style.opacity = '0.5';
-    
-    fetchData().finally(() => {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    });
+    fetchData();
+    showError(''); // Clear any existing errors
 }
 
+// Initial load
 fetchData();
-setInterval(fetchData, 60000);
 
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(err => {
-        console.log('Service worker registration failed:', err);
-    });
-}
+// Refresh every 5 minutes
+setInterval(fetchData, 5 * 60 * 1000);
