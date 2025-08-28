@@ -7,7 +7,7 @@
     "scrape": "node scraper-standalone.js"
   },
   "dependencies": {
-    "puppeteer": "^21.6.1",
+    "puppeteer": "^24.9.0",
     "dotenv": "^16.3.1"
   }
 }
