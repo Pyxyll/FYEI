@@ -86,9 +86,62 @@ async function scrapeBalance() {
     console.log('Waiting for dashboard...');
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Get balance
-    const balanceSelector = '#prepayBalanceAmt';
-    await page.waitForSelector(balanceSelector, { timeout: 15000 });
+    // Debug: Check current page
+    const currentUrl = page.url();
+    console.log('Current URL:', currentUrl);
+    
+    const pageTitle = await page.title();
+    console.log('Page title:', pageTitle);
+    
+    // Debug: Take screenshot for troubleshooting
+    try {
+      await page.screenshot({ path: 'debug-dashboard.png', fullPage: true });
+      console.log('Debug screenshot saved');
+    } catch (e) {
+      console.log('Could not save screenshot:', e.message);
+    }
+    
+    // Debug: List all elements with 'balance' in ID or class
+    const balanceElements = await page.evaluate(() => {
+      const elements = Array.from(document.querySelectorAll('*'));
+      return elements
+        .filter(el => el.id.toLowerCase().includes('balance') || el.className.toLowerCase().includes('balance'))
+        .map(el => ({ 
+          tag: el.tagName, 
+          id: el.id, 
+          className: el.className, 
+          text: el.textContent.trim().substring(0, 50) 
+        }));
+    });
+    console.log('Elements with "balance":', JSON.stringify(balanceElements, null, 2));
+    
+    // Try multiple balance selectors
+    const balanceSelectors = [
+      '#prepayBalanceAmt',
+      '.prepay-balance',
+      '.balance-amount',
+      '.current-balance',
+      '[data-testid="balance"]',
+      '*[id*="balance" i]',
+      '*[class*="balance" i]'
+    ];
+    
+    let balanceSelector = null;
+    for (const selector of balanceSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 2000 });
+        balanceSelector = selector;
+        console.log(`Found balance element with selector: ${selector}`);
+        break;
+      } catch (e) {
+        console.log(`Selector failed: ${selector}`);
+        continue;
+      }
+    }
+    
+    if (!balanceSelector) {
+      throw new Error('Could not find balance element with any selector');
+    }
     
     const balance = await page.$eval(balanceSelector, el => {
       const text = el.textContent.trim();
