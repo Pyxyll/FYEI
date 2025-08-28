@@ -75,7 +75,7 @@ async function scrapeBalance() {
     await page.type(passwordField, process.env.ELECTRICITY_PASSWORD, { delay: 100 });
     
     // Submit
-    await page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     const submitButton = await page.$('button[type="submit"]') || await page.$('input[type="submit"]');
     await Promise.all([
       submitButton.click(),
@@ -84,7 +84,7 @@ async function scrapeBalance() {
     
     // Wait for dashboard
     console.log('Waiting for dashboard...');
-    await page.waitForTimeout(3000);
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
     // Get balance
     const balanceSelector = '#prepayBalanceAmt';
