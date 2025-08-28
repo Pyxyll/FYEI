@@ -1,5 +1,5 @@
 // Static version that reads from GitHub
-const GITHUB_USER = 'Pyxyl'; // Your GitHub username
+const GITHUB_USER = 'Pyxyll'; // Your GitHub username (note the extra 'l')
 const GITHUB_REPO = 'FYEI'; // Your repo name
 const DATA_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/balance.json`;
 
