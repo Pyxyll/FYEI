@@ -74,13 +74,61 @@ async function scrapeBalance() {
     await page.keyboard.press('Backspace');
     await page.type(passwordField, process.env.ELECTRICITY_PASSWORD, { delay: 100 });
     
+    console.log('Filled credentials, looking for submit button...');
+    
+    // Find submit button with better debugging
+    const submitSelectors = [
+      'button[type="submit"]',
+      'input[type="submit"]',
+      'button[class*="submit"]',
+      'button[class*="login"]',
+      'button[class*="sign-in"]',
+      '.login-button',
+      '#login-button'
+    ];
+    
+    let submitButton = null;
+    for (const selector of submitSelectors) {
+      const element = await page.$(selector);
+      if (element) {
+        submitButton = element;
+        console.log(`Found submit button: ${selector}`);
+        break;
+      } else {
+        console.log(`Submit selector failed: ${selector}`);
+      }
+    }
+    
+    if (!submitButton) {
+      console.log('No submit button found, checking all buttons...');
+      const buttons = await page.evaluate(() => {
+        return Array.from(document.querySelectorAll('button, input[type="submit"]')).map(btn => ({
+          tag: btn.tagName,
+          type: btn.type,
+          id: btn.id,
+          className: btn.className,
+          text: btn.textContent.trim()
+        }));
+      });
+      console.log('Available buttons:', JSON.stringify(buttons, null, 2));
+      throw new Error('No submit button found');
+    }
+    
     // Submit
+    console.log('Clicking submit button...');
     await new Promise(resolve => setTimeout(resolve, 1000));
-    const submitButton = await page.$('button[type="submit"]') || await page.$('input[type="submit"]');
-    await Promise.all([
-      submitButton.click(),
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 })
-    ]);
+    
+    try {
+      await Promise.all([
+        submitButton.click(),
+        page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 })
+      ]);
+      console.log('Login submitted successfully');
+    } catch (navError) {
+      console.log('Navigation after login failed:', navError.message);
+      console.log('Current URL after submit:', page.url());
+      // Continue anyway - might still be logged in
+    }
     
     // Wait for dashboard
     console.log('Waiting for dashboard...');
@@ -105,12 +153,16 @@ async function scrapeBalance() {
     const balanceElements = await page.evaluate(() => {
       const elements = Array.from(document.querySelectorAll('*'));
       return elements
-        .filter(el => el.id.toLowerCase().includes('balance') || el.className.toLowerCase().includes('balance'))
+        .filter(el => {
+          const id = (el.id || '').toLowerCase();
+          const className = (el.className || '').toLowerCase();
+          return id.includes('balance') || className.includes('balance');
+        })
         .map(el => ({ 
           tag: el.tagName, 
-          id: el.id, 
-          className: el.className, 
-          text: el.textContent.trim().substring(0, 50) 
+          id: el.id || '', 
+          className: el.className || '', 
+          text: (el.textContent || '').trim().substring(0, 50) 
         }));
     });
     console.log('Elements with "balance":', JSON.stringify(balanceElements, null, 2));
