@@ -44,6 +44,7 @@ export class ScraperService {
     this.isRunning = true;
     this.lastRun = new Date();
     
+    // Wrap entire scraping process to prevent any crashes
     try {
       console.log('Starting balance scrape...');
       

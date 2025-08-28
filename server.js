@@ -45,5 +45,21 @@ app.get('/api/status', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Electricity Monitor running on http://0.0.0.0:${PORT}`);
-  scraper.start();
+  
+  // Start scraper with error handling to prevent crash loops
+  const startScraper = async () => {
+    try {
+      await scraper.start();
+      console.log('Scraper service started successfully');
+    } catch (err) {
+      console.error('Failed to start scraper:', err.message);
+      console.log('Server will continue running without scraper');
+      // Server continues to run even if scraper fails
+    }
+  };
+  
+  // Delay scraper start to ensure server is fully initialized
+  const startupDelay = process.env.NODE_ENV === 'production' ? 10000 : 2000;
+  console.log(`Starting scraper in ${startupDelay/1000} seconds...`);
+  setTimeout(startScraper, startupDelay);
 });
