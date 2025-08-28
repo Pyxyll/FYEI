@@ -149,31 +149,78 @@ async function scrapeBalance() {
       console.log('Could not save screenshot:', e.message);
     }
     
-    // Check if we're actually logged in by looking for error messages
-    const loginError = await page.evaluate(() => {
-      const errorElements = Array.from(document.querySelectorAll('*')).filter(el => {
-        const text = (el.textContent || '').toLowerCase();
-        return text.includes('incorrect') || text.includes('invalid') || text.includes('error') || 
-               text.includes('wrong') || text.includes('failed') || text.includes('denied');
+    // Check for specific login error messages
+    const loginErrors = await page.evaluate(() => {
+      // Look for common error message containers
+      const errorSelectors = [
+        '.error-message',
+        '.alert-danger', 
+        '.validation-error',
+        '[class*="error"]',
+        '[id*="error"]'
+      ];
+      
+      const errors = [];
+      
+      for (const selector of errorSelectors) {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+          const text = el.textContent.trim();
+          if (text && text.length < 200) { // Avoid CSS/JS content
+            errors.push(text);
+          }
+        });
+      }
+      
+      // Also check for specific error text in visible elements
+      const allVisible = Array.from(document.querySelectorAll('*')).filter(el => {
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden';
       });
-      return errorElements.map(el => el.textContent.trim()).filter(text => text.length > 0);
+      
+      allVisible.forEach(el => {
+        const text = el.textContent.trim().toLowerCase();
+        if ((text.includes('incorrect password') || 
+             text.includes('invalid credentials') || 
+             text.includes('login failed') ||
+             text.includes('wrong username')) && text.length < 100) {
+          errors.push(el.textContent.trim());
+        }
+      });
+      
+      return [...new Set(errors)]; // Remove duplicates
     });
     
-    if (loginError.length > 0) {
-      console.log('Login errors found:', loginError);
-      throw new Error(`Login failed: ${loginError.join('; ')}`);
+    if (loginErrors.length > 0) {
+      console.log('Specific login errors found:', loginErrors);
     }
     
     // Since we're still on login page, the credentials might be wrong
     if (pageTitle.includes('Login') || currentUrl.includes('login')) {
-      console.log('Still on login page - credentials might be incorrect');
+      console.log('Still on login page - login likely failed');
       
-      // Check what credentials we're using (safely)
-      console.log('Username length:', process.env.ELECTRICITY_USERNAME?.length || 0);
-      console.log('Password length:', process.env.ELECTRICITY_PASSWORD?.length || 0);
-      console.log('Username starts with:', process.env.ELECTRICITY_USERNAME?.substring(0, 5) || 'undefined');
+      // Debug what's in the form fields
+      const fieldValues = await page.evaluate(() => {
+        const usernameField = document.querySelector('input[type="email"], input[name="email"], input[name="username"]');
+        const passwordField = document.querySelector('input[type="password"]');
+        
+        return {
+          usernameValue: usernameField ? usernameField.value.substring(0, 5) + '...' : 'not found',
+          usernameLength: usernameField ? usernameField.value.length : 0,
+          passwordLength: passwordField ? passwordField.value.length : 0,
+          passwordExists: !!passwordField?.value
+        };
+      });
       
-      throw new Error('Login failed - still on login page after submit');
+      console.log('Form field values:', fieldValues);
+      console.log('Environment username length:', process.env.ELECTRICITY_USERNAME?.length || 0);
+      console.log('Environment password length:', process.env.ELECTRICITY_PASSWORD?.length || 0);
+      
+      if (loginErrors.length > 0) {
+        throw new Error(`Login failed with errors: ${loginErrors.join('; ')}`);
+      } else {
+        throw new Error('Login failed - still on login page (no specific error found)');
+      }
     }
     
     // Debug: List all elements with 'balance' in ID or class (only if not on login page)
