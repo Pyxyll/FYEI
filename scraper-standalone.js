@@ -149,20 +149,51 @@ async function scrapeBalance() {
       console.log('Could not save screenshot:', e.message);
     }
     
-    // Debug: List all elements with 'balance' in ID or class
+    // Check if we're actually logged in by looking for error messages
+    const loginError = await page.evaluate(() => {
+      const errorElements = Array.from(document.querySelectorAll('*')).filter(el => {
+        const text = (el.textContent || '').toLowerCase();
+        return text.includes('incorrect') || text.includes('invalid') || text.includes('error') || 
+               text.includes('wrong') || text.includes('failed') || text.includes('denied');
+      });
+      return errorElements.map(el => el.textContent.trim()).filter(text => text.length > 0);
+    });
+    
+    if (loginError.length > 0) {
+      console.log('Login errors found:', loginError);
+      throw new Error(`Login failed: ${loginError.join('; ')}`);
+    }
+    
+    // Since we're still on login page, the credentials might be wrong
+    if (pageTitle.includes('Login') || currentUrl.includes('login')) {
+      console.log('Still on login page - credentials might be incorrect');
+      
+      // Check what credentials we're using (safely)
+      console.log('Username length:', process.env.ELECTRICITY_USERNAME?.length || 0);
+      console.log('Password length:', process.env.ELECTRICITY_PASSWORD?.length || 0);
+      console.log('Username starts with:', process.env.ELECTRICITY_USERNAME?.substring(0, 5) || 'undefined');
+      
+      throw new Error('Login failed - still on login page after submit');
+    }
+    
+    // Debug: List all elements with 'balance' in ID or class (only if not on login page)
     const balanceElements = await page.evaluate(() => {
       const elements = Array.from(document.querySelectorAll('*'));
       return elements
         .filter(el => {
-          const id = (el.id || '').toLowerCase();
-          const className = (el.className || '').toLowerCase();
-          return id.includes('balance') || className.includes('balance');
+          try {
+            const id = el.id ? String(el.id).toLowerCase() : '';
+            const className = el.className ? String(el.className).toLowerCase() : '';
+            return id.includes('balance') || className.includes('balance');
+          } catch (e) {
+            return false;
+          }
         })
         .map(el => ({ 
           tag: el.tagName, 
-          id: el.id || '', 
-          className: el.className || '', 
-          text: (el.textContent || '').trim().substring(0, 50) 
+          id: el.id ? String(el.id) : '', 
+          className: el.className ? String(el.className) : '', 
+          text: el.textContent ? String(el.textContent).trim().substring(0, 50) : ''
         }));
     });
     console.log('Elements with "balance":', JSON.stringify(balanceElements, null, 2));
