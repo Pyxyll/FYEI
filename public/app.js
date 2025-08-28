@@ -13,13 +13,26 @@ if ('serviceWorker' in navigator) {
 }
 
 async function fetchData() {
+    console.log('Fetching data from:', DATA_URL);
     try {
         const response = await fetch(DATA_URL);
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
+        console.log('Data received:', data);
         updateDisplay(data);
     } catch (error) {
         console.error('Error fetching data:', error);
-        showError('Failed to fetch data');
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
+        showError(`Failed to fetch data: ${error.message}`);
     }
 }
 
