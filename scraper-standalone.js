@@ -309,16 +309,50 @@ async function scrapeBalance() {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     
+    const timestamp = new Date().toISOString();
     const data = {
       balance,
       daysRemaining,
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: timestamp,
       error: null
     };
     
+    // Save current balance (for existing functionality)
     fs.writeFileSync(
       join(dataDir, 'balance.json'),
       JSON.stringify(data, null, 2)
+    );
+    
+    // Append to historical data
+    const historyPath = join(dataDir, 'balance-history.json');
+    let history = [];
+    
+    try {
+      if (fs.existsSync(historyPath)) {
+        const historyContent = fs.readFileSync(historyPath, 'utf8');
+        history = JSON.parse(historyContent);
+      }
+    } catch (e) {
+      console.log('Error reading history file, starting fresh:', e.message);
+      history = [];
+    }
+    
+    // Add new entry
+    history.push({
+      timestamp,
+      balance,
+      daysRemaining
+    });
+    
+    // Keep only last 90 days of data (assuming ~48 entries per day at 30min intervals)
+    const maxEntries = 90 * 48;
+    if (history.length > maxEntries) {
+      history = history.slice(-maxEntries);
+    }
+    
+    fs.writeFileSync(
+      historyPath,
+      JSON.stringify(history, null, 2)
     );
     
     console.log('Data saved successfully');

@@ -13,6 +13,7 @@
     <link rel="manifest" href="/manifest.json">
     <title>Electricity Monitor</title>
     <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
@@ -46,6 +47,11 @@
                     <span class="info-label">Next Update:</span>
                     <span class="info-value" id="nextUpdate">--</span>
                 </div>
+            </div>
+            
+            <div class="chart-card">
+                <h2>Balance History</h2>
+                <canvas id="balanceChart"></canvas>
             </div>
             
             <div class="error-message" id="errorMessage"></div>

@@ -140,6 +140,28 @@ h1 {
     box-shadow: var(--shadow);
 }
 
+.chart-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+.chart-card h2 {
+    font-size: 1.2em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#balanceChart {
+    max-height: 300px;
+}
+
 .info-row {
     display: flex;
     justify-content: space-between;
